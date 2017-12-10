@@ -5,6 +5,29 @@
   <link rel="stylesheet" type="text/css" href="/static/style.css"></link>
 {% endblock %}
 
+{% block recent_reports %}
+<div class="column">
+  <div class="span4">
+    <div class="well sidebar-nav">
+      <div class="panel panel-error">
+        <div class="panel-heading" align="center">
+          Recently uploaded SAR reports
+        </div>
+        <!-- <label><i>pulled out of Grafana</i></label> -->
+        {% if investigations %}
+        <div class="panel-body">
+          <ol>
+            {% for db_title in investigations|arrange(5) %}
+            <li><a href="{{ redirect_url }}/{{report_id}}">{{db_title}}</a></li>
+            {% endfor %}
+          </ol>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
 
 {% block dashboard %}
   <section class='container'>

@@ -1,3 +1,5 @@
+[![Build Status](https://api.travis-ci.org/distributed-system-analysis/sarjitsu.png?branch=master)](https://travis-ci.org/distributed-system-analysis/sarjitsu)
+
 Table of Contents
 =================
 

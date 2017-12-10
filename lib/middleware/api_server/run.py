@@ -5,7 +5,7 @@ import os, sys
 import configparser
 import requests, json
 from flask import Flask, jsonify, request, Response
-from create_dashboard import *
+from create_dashboard import DashboardsAPI
 
 app = Flask(__name__)
 
@@ -86,16 +86,18 @@ def create_db():
         try:
             beg, end = tstos(ts_beg=ts_beg, ts_end=ts_end)
             date = beg.split()[0]
-            PP = PrepareDashboard(DB_TITLE='%s_%s_investigation' % (nodename, date),
-                                  DB_TITLE_ORIG='%s_%s_investigation' % (
-                                      nodename, date),
-                                  _FROM=beg, _TO=end,
-                                  _FIELDS=modes.split(','),
-                                  NODENAME=nodename,
-                                  TIMEFIELD=TSTAMP_FIELD,
-                                  TEMPLATES=TEMPLATES_PATH,
-                                  db_credentials=db_credentials,
-                                  DATASOURCE=SOURCE)
+            PP = DashboardsAPI(
+                DB_TITLE='%s_%s_investigation' % (nodename, date),
+                DB_TITLE_ORIG='%s_%s_investigation' % (
+                  nodename, date),
+                _FROM=beg, _TO=end,
+                _FIELDS=modes.split(','),
+                NODENAME=nodename,
+                TIMEFIELD=TSTAMP_FIELD,
+                TEMPLATES=TEMPLATES_PATH,
+                db_credentials=db_credentials,
+                DATASOURCE=SOURCE
+            )
 
             PP.store_dashboard()
             response = { "reply" : "SUCCESS",

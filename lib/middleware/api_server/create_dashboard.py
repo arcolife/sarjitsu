@@ -21,42 +21,13 @@ def tstos(ts_beg=None, ts_end=None, current=False):
         return (ts_beg.strftime("%Y-%m-%d %H:%M:%S.%fZ"),
                 ts_end.strftime("%Y-%m-%d %H:%M:%S.%fZ"))
 
-class PrepareDashboard(object):
+class ConnectToDB():
     """
-    pass dashboard metadata and prepare rows from
-    a pre-processed template.
+    Used for interfacing with PostgreSQL Database
     """
 
-    def __init__(self, DB_TITLE='default', DB_TITLE_ORIG='default',
-                 _FROM=None, _TO=None, _FIELDS=None,
-                 TIMEFIELD='_timestamp', DATASOURCE=None,
-                 TEMPLATES=None, NODENAME=None, db_credentials={}):
-        """
-        Use the precprocessed templates to create the dashboard,
-        editing following parameters only:
-        - fields to visualize
-        - time range for the dashboard,
-        - dashboard  title
-        - datasource for dashboard
-        - time field metric name for the datasource
-        """
-        self._FIELDS = _FIELDS
-        self.NODENAME = NODENAME
-        self.TEMPLATES = TEMPLATES
-        self.TIMEFIELD = TIMEFIELD
-        self.DATASOURCE = DATASOURCE
-        self.DB_TITLE = DB_TITLE
-        self.db_credentials = db_credentials
-        # make these changes in dashboard parent template
-        self.variable_params_dict = dict([('id', 1),
-                                          ('title', self.DB_TITLE),
-                                          ('originalTitle', DB_TITLE_ORIG),
-                                          ('time', {'from': _FROM,
-                                                    'to': _TO}),
-                                          ('rows', []),
-                                          ('schemaVersion', 1),
-                                          ('version', 1)
-                                          ])
+    def __init__(self, creds):
+        self.db_credentials = creds
 
     def init_db_connection(self):
         self.conn = psycopg2.connect("dbname='%s' user='%s' host='%s' port='%s' password='%s'" %
@@ -70,6 +41,42 @@ class PrepareDashboard(object):
     def end_db_conn(self):
         self.conn.commit()
         self.conn.close()
+
+
+class PrepareDashboard(ConnectToDB):
+    """
+    pass dashboard metadata and prepare rows from
+    a pre-processed template.
+    """
+
+    def __init__(self, **metadata):
+        """
+        Use the precprocessed templates to create the dashboard,
+        editing following parameters only:
+        - fields to visualize
+        - time range for the dashboard,
+        - dashboard  title
+        - datasource for dashboard
+        - time field metric name for the datasource
+        """
+        super(PrepareDashboard, self).__init__(db_credentials)
+        self._FIELDS = _FIELDS
+        self.NODENAME = NODENAME
+        self.TEMPLATES = TEMPLATES
+        self.TIMEFIELD = TIMEFIELD
+        self.DATASOURCE = DATASOURCE
+        self.DB_TITLE = DB_TITLE
+        # self.db_credentials = db_credentials
+        # make these changes in dashboard parent template
+        self.variable_params_dict = dict([('id', 1),
+                                          ('title', self.DB_TITLE),
+                                          ('originalTitle', DB_TITLE_ORIG),
+                                          ('time', {'from': _FROM,
+                                                    'to': _TO}),
+                                          ('rows', []),
+                                          ('schemaVersion', 1),
+                                          ('version', 1)
+                                          ])
 
     def create_row(self, field_name, description=False):
         """
@@ -119,14 +126,7 @@ class PrepareDashboard(object):
                 print("couldn't prepare row for: %s" % field)
                 print(err)
 
-    def check_prev_metadata(self):
-        """
-        check grafana db for existant dashboards, panel id's and
-        return them for next iteration.
-        """
-        pass
-
-    def prepare_dashboard(self):
+    def bake(self):
         """
         Check these if they already exist in grafana.db.
         Bump up those numbers, if so.
@@ -156,7 +156,7 @@ class PrepareDashboard(object):
         'updated']
         """
         self.init_db_connection()
-        self.prepare_dashboard()
+        self.bake()
         # TODO: obtain metadata from check_prev_metadata()
         _id = random.getrandbits(12)
         version = 1
@@ -168,3 +168,50 @@ class PrepareDashboard(object):
                         (_id, version, slug, title, json.dumps(self.data),
                          org_id,created, updated))
         self.end_db_conn()
+
+
+class DashboardsInterface(ConnectToDB):
+
+    def __init__(self, **metadata):
+        super(DashboardsInterface, self).__init__(db_credentials)
+
+    def check_prev_metadata(self):
+        """
+        check grafana db for existant dashboards, panel id's and
+        return them for next iteration.
+        """
+        # self.init_db_connection()
+        pass
+        # self.end_db_conn()
+
+    def query_dashboards(self, user="anon", pattern=None):
+        """
+        queries dashboards for a user,
+        ..optionally with a search pattern
+        """
+        # self.init_db_connection()
+        pass
+        # self.end_db_conn()
+
+
+class DashboardsAPI(DashboardsInterface, PrepareDashboard):
+
+    def __init__(self, DB_TITLE='default',
+                DB_TITLE_ORIG='default', _FROM=None, _TO=None,
+                _FIELDS=None, TIMEFIELD='_timestamp', DATASOURCE=None,
+                TEMPLATES=None, NODENAME=None, db_credentials={}):
+
+        metadata = {
+            DB_TITLE='default',
+            DB_TITLE_ORIG='default',
+            _FROM=None,
+            _TO=None,
+            _FIELDS=None,
+            TIMEFIELD='_timestamp',
+            DATASOURCE=None,
+            TEMPLATES=None,
+            NODENAME=None,
+            db_credentials={}
+        }
+
+        super(DashboardsInterface, self).__init__(**metadata)

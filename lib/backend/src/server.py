@@ -26,6 +26,10 @@ import upload_processor
 config = configparser.ConfigParser()
 config.read(app.config.get('CFG_PATH'))
 
+dashboard_url = config.get('Grafana','dashboard_url')
+if not dashboard_url:
+    import socket; IP = socket.gethostbyname('frontend')
+    dashboard_url = "http://%s:3000" % IP
 
 @app.route('/asciimo', methods=['GET'])
 def ascii():
@@ -39,11 +43,13 @@ def home():
     session['user'] = "anon"
     # reset_cache(session.sid)
     form = UploadForm(request.form)
-
+    investigations = None
     return render_template('index.html',
                                 user=session['user'],
                                 data=False,
                                 form=form,
+                                redirect_url=dashboard_url,
+                                investigations=investigations,
                                 progress=0,
                                 **app.config.get('TEMPLATE_CONFIGURATION'))
 
@@ -63,11 +69,6 @@ def uploader():
                                                             session.sid, form)
         else:
             return jsonify({'form data': 'INVALID'})
-
-        dashboard_url = config.get('Grafana','dashboard_url')
-        if not dashboard_url:
-            import socket; IP = socket.gethostbyname('frontend')
-            dashboard_url = "http://%s:3000" % IP
 
         if form.data['cmd_mode']:
             res = {
